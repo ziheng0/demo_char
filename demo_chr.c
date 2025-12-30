@@ -3,15 +3,50 @@
 #include <linux/fs.h>
 #include <linux/device.h>
 #include <linux/cdev.h> 
+#include <linux/uaccess.h>   // copy_from_user
 
 #define DEVICE_NAME "hello_char"
 #define CLASS_NAME "hello_class"
+
+#define BUF_SIZE 128
+static char kernel_buf[BUF_SIZE];
 
 static int major;
 static struct class *hello_class = NULL;
 static struct device *hello_device = NULL;
 static dev_t dev_num;
 static struct cdev hello_cdev;  
+
+static int hello_open(struct inode *inode, struct file *file)
+{
+    pr_info("hello_char: device opened\n");
+    return 0;
+}
+
+static ssize_t hello_write(struct file *file, const char __user *buf, size_t count, loff_t *ppos)
+{
+    size_t len = count;
+
+    if (len > BUF_SIZE - 1)
+    len = BUF_SIZE - 1;
+
+    if (copy_from_user(kernel_buf, buf, len)) {
+        pr_err("hello_char: copy_from_user failed\n");
+        return -EFAULT;
+    }
+
+    kernel_buf[len] = '\0'; 
+    pr_info("hello_char: write received: %s\n", kernel_buf);
+
+    return count; 
+}
+
+static int hello_release(struct inode *inode, struct file *file)
+{
+    pr_info("hello_char: device closed\n");
+    return 0;
+}
+
 
 static ssize_t hello_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -20,8 +55,11 @@ static ssize_t hello_read(struct file *file, char __user *buf, size_t count, lof
 }
 
 static struct file_operations fops ={
-    .owner = THIS_MODULE,
-    .read = hello_read,
+    .owner   = THIS_MODULE,
+    .open    = hello_open,
+    .read    = hello_read,
+    .write   = hello_write,
+    .release = hello_release,
 };
 
 static int __init hello_init(void)
@@ -85,10 +123,6 @@ static void __exit hello_exit(void)
         class_destroy(hello_class);
         pr_info("class_destroy!\n");
     }
-
-    cdev_del(&hello_cdev);  
-    pr_info("cdev_del!\n");
-
     unregister_chrdev_region(dev_num, 1);
     pr_info("unregister_chrdev_region!\n");
 
@@ -100,4 +134,4 @@ module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("puck");
-MODULE_DESCRIPTION("Stage 4: Dynamically allocate major device number");
+MODULE_DESCRIPTION("Stage5: Improve file_operations");

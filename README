@@ -1,1 +1,4 @@
-Stage 4: Dynamically allocate major device number
+insmod demo_chr.ko
+cat /dev/hello_char
+echo "hello kernel" > /dev/hello_char
+
