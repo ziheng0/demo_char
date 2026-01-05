@@ -28,15 +28,29 @@ static ssize_t hello_write(struct file *file, const char __user *buf, size_t cou
     size_t len = count;
 
     if (len > BUF_SIZE - 1)
-    len = BUF_SIZE - 1;
+        len = BUF_SIZE - 1;
 
     if (copy_from_user(kernel_buf, buf, len)) {
-        pr_err("hello_char: copy_from_user failed\n");
+        pr_err("led_char: copy_from_user failed\n");
         return -EFAULT;
     }
 
     kernel_buf[len] = '\0'; 
-    pr_info("hello_char: write received: %s\n", kernel_buf);
+    
+    /* Remove newline characters introduced by echo */
+    if (kernel_buf[len - 1] == '\n')
+        kernel_buf[len - 1] = '\0';
+
+    pr_info("led_char: write received: %s\n", kernel_buf);
+
+    /* Simulate LED control */
+    if (strcmp(kernel_buf, "on") == 0) {
+        pr_info("hello_char: LED ON\n");
+    } else if (strcmp(kernel_buf, "off") == 0) {
+        pr_info("hello_char: LED OFF\n");
+    } else {
+        pr_info("hello_char: Unknown command\n");
+    }
 
     return count; 
 }
@@ -46,7 +60,6 @@ static int hello_release(struct inode *inode, struct file *file)
     pr_info("hello_char: device closed\n");
     return 0;
 }
-
 
 static ssize_t hello_read(struct file *file, char __user *buf, size_t count, loff_t *ppos)
 {
@@ -134,4 +147,4 @@ module_exit(hello_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("puck");
-MODULE_DESCRIPTION("Stage5: Improve file_operations");
+MODULE_DESCRIPTION("v7 led char");
