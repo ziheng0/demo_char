@@ -5,14 +5,13 @@
  * This file only describes the existence of the device.
  * It does NOT contain any driver or char device logic.
  */
-
-// static struct resource led_resource[] = {
-//     [0] = {
-//         .start = 2,
-//         .end   = 2,
-//         .flags = IORESOURCE_MEM,
-//     },
-// };
+static struct resource hello_resource[] = {
+    [0] = {
+        .start = 1,
+        .end   = 1,
+        .flags = IORESOURCE_MEM,
+    },
+};
 
 static void hello_release(struct device * dev)
 {
@@ -23,8 +22,8 @@ static void hello_release(struct device * dev)
 static struct platform_device hello_pdev = {
     .name = "hello_led",   /* Must match platform_driver name */
     .id   = -1,
-    //.num_resources      = ARRAY_SIZE(hello_resource),
-    //.resource           = hello_resource,
+    .num_resources      = ARRAY_SIZE(hello_resource),
+    .resource           = hello_resource,
     .dev                = { 
     	                .release = hello_release, 
 	},
