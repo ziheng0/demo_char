@@ -120,11 +120,20 @@ static int hello_probe(struct platform_device *pdev)
 {
     int retval;
     struct resource		*res;
-
+    pr_info("hello_probe...\n");
     res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	led_pin = res->start;
-    pr_info("hello_probe and led_pin %d...\n", led_pin);
-
+	if(res){
+        led_pin = res->start;
+    }
+    else{
+        of_property_read_u32(pdev->dev.of_node, "pin", &led_pin);
+        pr_info("[DTS] led_pin %d...\n", led_pin);
+    }
+    if (!led_pin) 
+	{
+		pr_info("can not get pin for led\n");
+		return -EINVAL;
+	}
     //1- Dynamically allocate major device number
     retval = alloc_chrdev_region(&dev_num, 0, 1, DEVICE_NAME);
     if (retval < 0) {
@@ -190,11 +199,19 @@ static int hello_remove(struct platform_device *pdev)
     return 0;
 }
 
+static const struct of_device_id of_match_leds[] = {
+	{   
+        .compatible = "mdm9607_led", 
+        .data = NULL 
+    },
+};
+
 struct platform_driver hello_drv = {
 	.probe		= hello_probe,
 	.remove		= hello_remove,
 	.driver		= {
 		.name	= "hello_led",
+        .of_match_table = of_match_leds,
 	}
 };
 
